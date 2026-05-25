@@ -1,0 +1,13 @@
+.pio
+.vscode/.browse.c_cpp*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+.cache/
+build/
+*.zip
+compile_commands.json
+bluepad32_lib/
+bp32_v4/
+lib/
+pio_bp32_framework/
