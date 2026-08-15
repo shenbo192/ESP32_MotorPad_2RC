@@ -33,11 +33,12 @@
 #define STATUS_LED 22   // 状态灯
 
 // ===== 扩展功能引脚 =====
-#define LED_STRIP_PIN     23   // LED灯带（调整避免与 REAR_IN2 冲突）
+// RGB 灯带数据线保留在 GPIO 21，避免与当前电机控制脚位冲突
+#define LED_STRIP_PIN     21   // RGB 灯带数据线
 
 /*
- * 已验证好用的GPIO: 12, 13, 14, 32, 33, 21, 18, 5
- * 当前空闲可用:     4, 5, 15, 16, 17, 21, 23
+ * 已使用 GPIO: 12,13,14,27,26,25,15,2,4,6,7,5,22,21
+ * 当前空闲可用: 16,17,32,33
  */
 
 extern bool deviceConnected;
