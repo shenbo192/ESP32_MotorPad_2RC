@@ -18,7 +18,7 @@
 
 // ============ 配置参数 ============
 #define RECONNECT_TIMEOUT_MS   500     // 断连后多久自动重扫 (毫秒) - 改为500ms更快重连
-#define SCAN_DURATION_MS       3000    // 每次扫描持续时长 (毫秒) - 改为3秒更快扫描
+#define SCAN_DURATION_MS       5000    // 每次扫描持续时长 (毫秒) - 增加为5秒以提高发现率
 
 // ============ 全局变量 ============
 static ControllerPtr myGamepads[BP32_MAX_GAMEPADS];
@@ -103,13 +103,17 @@ static const char* getModelName(int model) {
 // ============ 扫描控制 ============
 
 // 开始新的蓝牙扫描
-static void startScan() {
+static void startScan(bool forgetKeys = false) {
     if (isScanning) return;  // 避免重复扫描
-    
+
     isScanning = true;
     lastScanTime = millis();
-    BP32.forgetBluetoothKeys();  // 清除旧绑定，开始新扫描
-    
+    // 只有在明确要求的情况下才清除旧绑定（例如手动重扫），
+    // 自动重连不应清除绑定信息，否则会强制手柄进入配对模式。
+    if (forgetKeys) {
+        BP32.forgetBluetoothKeys();  // 清除旧绑定，开始新扫描
+    }
+
     Serial.print("\n>>> 🔍 开始蓝牙扫描... ");
     Serial.printf("[超时: %dms] <<<\n", SCAN_DURATION_MS);
 }
@@ -261,7 +265,8 @@ void initBTHID()
 // ============ 手动触发重新扫描（公开接口）============
 void resumeBTHIDScan() {
     Serial.println("\n🔄 [手动] 用户请求重新搜索蓝牙手柄...");
-    startScan();
+    // 手动触发时清除绑定并强制重新配对
+    startScan(true);
     disconnectTime = 0;  // 重置断连计时器
 }
 

@@ -6,31 +6,34 @@
 // L298N 四路驱动模块 + 7.4V锂电池供电
 // SF-631-3LED 状态指示灯 + LED灯带 + 硬件电源开关
 
-// ===== L298N 电机驱动引脚定义（优化版）=====
-// ★ 前/中/后轴共用方向引脚（三轴永远同向运动），各轴PWM独立控制速度
-#define DRIVE_IN1  12   // ✅ 共用方向控制1 (已确认)
-#define DRIVE_IN2  13   // ✅ 共用方向控制2 (已确认)
+// ===== L298N 电机驱动引脚定义（每路独立 IN1/IN2 + ENA）=====
+// 每一路 L298N: IN1, IN2, ENA(PWM)
+// 前轴（A 路） — 使用你提供第一行的前三个：D13, D12, D14
+#define FRONT_IN1   13
+#define FRONT_IN2   12
+#define FRONT_ENA   14
 
-// 前轴驱动电机 (L298N 电机1路) - 仅PWM独立
-#define FRONT_ENA  14   // ✅ PWM速度控制 (已确认)
+// 中轴（B 路） — 使用第一行的下一个三组：27,26,25
+#define MIDDLE_IN1  27
+#define MIDDLE_IN2  26
+#define MIDDLE_ENA  25
 
-// 中轴驱动电机 (L298N 电机2路) - 仅PWM独立
-#define MIDDLE_ENA 19   // PWM速度控制
+// 后轴（C 路） — 使用第二行的前三个：D15, D2, D4
+#define REAR_IN1    15
+#define REAR_IN2    2
+#define REAR_ENA    4
 
-// 后轴驱动电机 (L298N 电机3路) - 仅PWM独立
-#define REAR_ENA  18    // ✅ PWM速度控制 (已确认)
-
-// 转向电机 (L298N 电机4路) - ENA接5V，只控制IN1/IN2
-#define STEER_IN1  32   // ✅ 方向控制1 (已确认)
-#define STEER_IN2  33   // ✅ 方向控制2 (已确认)
-#define STEER_ENA  4    // ✅ PWM速度控制 (安全引脚)
+// 转向（D 路） — 使用第二行的下一个三组：D6, D7, D5
+#define STEER_IN1   6
+#define STEER_IN2   7
+#define STEER_ENA   5
 
 // ===== LED指示灯系统 =====
 // SF-631-3LED 主状态灯（蓝牙/连接状态）
 #define STATUS_LED 22   // 状态灯
 
 // ===== 扩展功能引脚 =====
-#define LED_STRIP_PIN     2    // LED灯带
+#define LED_STRIP_PIN     23   // LED灯带（调整避免与 REAR_IN2 冲突）
 
 /*
  * 已验证好用的GPIO: 12, 13, 14, 32, 33, 21, 18, 5

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <style>
+    .board{fill:#f6f8fa;stroke:#333;stroke-width:2}
+    .pin{font:14px monospace;fill:#111}
+    .title{font:20px sans-serif; font-weight:bold}
+    .block{fill:#fff;stroke:#666;stroke-width:1}
+    .label{font:12px sans-serif;fill:#222}
+  </style>
+
+  <rect x="40" y="40" width="1120" height="720" rx="12" ry="12" class="board"/>
+  <text x="80" y="75" class="title">ESP32 MotorPad — Wiring Diagram (简明)</text>
+
+  <!-- Motor blocks -->
+  <g transform="translate(80,110)">
+    <rect class="block" x="0" y="0" width="320" height="120" rx="6" />
+    <text x="12" y="24" class="label">A — 前轴 (L298N A)</text>
+    <text x="12" y="52" class="pin">FRONT_IN1 = GPIO13</text>
+    <text x="12" y="72" class="pin">FRONT_IN2 = GPIO12</text>
+    <text x="12" y="92" class="pin">FRONT_ENA = GPIO14 (PWM CH0)</text>
+  </g>
+
+  <g transform="translate(440,110)">
+    <rect class="block" x="0" y="0" width="320" height="120" rx="6" />
+    <text x="12" y="24" class="label">B — 中轴 (L298N B)</text>
+    <text x="12" y="52" class="pin">MIDDLE_IN1 = GPIO27</text>
+    <text x="12" y="72" class="pin">MIDDLE_IN2 = GPIO26</text>
+    <text x="12" y="92" class="pin">MIDDLE_ENA = GPIO25 (PWM CH1)</text>
+  </g>
+
+  <g transform="translate(80,260)">
+    <rect class="block" x="0" y="0" width="320" height="120" rx="6" />
+    <text x="12" y="24" class="label">C — 后轴 (L298N C)</text>
+    <text x="12" y="52" class="pin">REAR_IN1 = GPIO15</text>
+    <text x="12" y="72" class="pin">REAR_IN2 = GPIO2</text>
+    <text x="12" y="92" class="pin">REAR_ENA = GPIO4 (PWM CH2)</text>
+  </g>
+
+  <g transform="translate(440,260)">
+    <rect class="block" x="0" y="0" width="320" height="120" rx="6" />
+    <text x="12" y="24" class="label">D — 转向 (L298N D)</text>
+    <text x="12" y="52" class="pin">STEER_IN1 = GPIO6</text>
+    <text x="12" y="72" class="pin">STEER_IN2 = GPIO7</text>
+    <text x="12" y="92" class="pin">STEER_ENA = GPIO5 (PWM CH3)</text>
+  </g>
+
+  <!-- LEDs and extras -->
+  <g transform="translate(80,420)">
+    <rect class="block" x="0" y="0" width="320" height="90" rx="6" />
+    <text x="12" y="24" class="label">GPIO 与外设</text>
+    <text x="12" y="48" class="pin">STATUS_LED = GPIO22</text>
+    <text x="12" y="68" class="pin">LED_STRIP_PIN = GPIO23</text>
+  </g>
+
+  <!-- LEDC mapping -->
+  <g transform="translate(440,420)">
+    <rect class="block" x="0" y="0" width="320" height="90" rx="6" />
+    <text x="12" y="24" class="label">LEDC PWM 通道</text>
+    <text x="12" y="48" class="pin">CH0 -> FRONT_ENA (GPIO14)</text>
+    <text x="12" y="68" class="pin">CH1 -> MIDDLE_ENA (GPIO25)</text>
+    <text x="12" y="88" class="pin">CH2 -> REAR_ENA (GPIO4)</text>
+    <text x="12" y="108" class="pin">CH3 -> STEER_ENA (GPIO5)</text>
+  </g>
+
+  <!-- Notes -->
+  <text x="80" y="580" class="label">注意:</text>
+  <text x="100" y="600" class="pin">- 避免使用 GPIO34/35/36/39 作为输出（输入专用）。</text>
+  <text x="100" y="620" class="pin">- 确保 L298N GND 与 ESP32 GND 共地；ENA 接 PWM 引脚，IN1/IN2 为方向。</text>
+
+  <text x="80" y="660" class="label">生成自文件: src/Config.h</text>
+</svg>

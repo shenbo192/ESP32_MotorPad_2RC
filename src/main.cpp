@@ -9,8 +9,8 @@ void printPinConfig() {
   Serial.println("╔══════════════════════════════════════════╗");
   Serial.println("║     ESP32 引脚分配表 (6轮攀爬车)        ║");
   Serial.println("╠══════════════════════════════════════════╣");
-  Serial.println("║  ██ 三轴共用方向 (L298N A/B/C路)       ║");
-  Serial.printf("║    IN1 ──── GPIO %-2d  IN2 ──── GPIO %-2d   ║\n", DRIVE_IN1, DRIVE_IN2);
+  Serial.println("║  ██ 前轴方向 (L298N A路)                ║");
+  Serial.printf("║    IN1 ──── GPIO %-2d  IN2 ──── GPIO %-2d   ║\n", FRONT_IN1, FRONT_IN2);
   Serial.println("╠══════════════════════════════════════════╣");
   Serial.println("║  ██ 各轴PWM独立控制                    ║");
   Serial.printf("║  前轴ENA ── GPIO %-2d                     ║\n", FRONT_ENA);

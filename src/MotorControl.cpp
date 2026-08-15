@@ -30,7 +30,7 @@ static SoftStartState ssRear   = { 2, &currentRearSpeed,   0, 0, false };
 // ===== 前向声明 =====
 static void _pwmWrite(uint8_t ch, uint32_t value);
 static void _pwmSetup(byte gpio, uint8_t ch);
-static void _setDriveDirection(bool forward);
+static void _setChannelDirection(uint8_t in1, uint8_t in2, bool forward);
 static void _setAxisSpeed(uint8_t ch, int *currentSpeed, int targetSpeed);
 static void _steerStart(int direction);
 
@@ -45,9 +45,10 @@ static void _pwmSetup(byte gpio, uint8_t ch) {
 }
 
 // ===== 方向控制 =====
-static void _setDriveDirection(bool forward) {
-  digitalWrite(DRIVE_IN1, forward ? HIGH : LOW);
-  digitalWrite(DRIVE_IN2, forward ? LOW : HIGH);
+// per-channel direction control
+static void _setChannelDirection(uint8_t in1, uint8_t in2, bool forward) {
+  digitalWrite(in1, forward ? HIGH : LOW);
+  digitalWrite(in2, forward ? LOW : HIGH);
 }
 
 // ===== 单轴PWM速度软启动（非阻塞）=====
@@ -94,49 +95,57 @@ void updateSoftStarts() {
 }
 
 void initMotorPins() {
-  pinMode(DRIVE_IN1, OUTPUT);
-  pinMode(DRIVE_IN2, OUTPUT);
-
+  // 前轴
+  pinMode(FRONT_IN1, OUTPUT);
+  pinMode(FRONT_IN2, OUTPUT);
   _pwmSetup(FRONT_ENA,  0);
+
+  // 中轴
+  pinMode(MIDDLE_IN1, OUTPUT);
+  pinMode(MIDDLE_IN2, OUTPUT);
   _pwmSetup(MIDDLE_ENA, 1);
+
+  // 后轴
+  pinMode(REAR_IN1, OUTPUT);
+  pinMode(REAR_IN2, OUTPUT);
   _pwmSetup(REAR_ENA,   2);
 
+  // 转向
   pinMode(STEER_IN1, OUTPUT);
   pinMode(STEER_IN2, OUTPUT);
   _pwmSetup(STEER_ENA, 3);
 
   allStop();
 
-  Serial.printf("[MOTOR] 初始化完成 | 方向GPIO%d/%d | 最大PWM=%d\n",
-                DRIVE_IN1, DRIVE_IN2, MAX_MOTOR_PWM);
+  Serial.printf("[MOTOR] 初始化完成 | 最大PWM=%d\n", MAX_MOTOR_PWM);
   Serial.printf("[MOTOR] LEDC: CH0=GPIO%d CH1=GPIO%d CH2=GPIO%d CH3=GPIO%d @%dHz\n",
                 FRONT_ENA, MIDDLE_ENA, REAR_ENA, STEER_ENA, PWM_FREQ_HZ);
 }
 
 // ==================== 前轴 ====================
-void frontForward()  { _setDriveDirection(true);  _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM); }
-void frontBackward() { _setDriveDirection(false); _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM); }
-void frontStop()     { _setAxisSpeed(0, &currentFrontSpeed, 0); }
+void frontForward()  { _setChannelDirection(FRONT_IN1, FRONT_IN2, true);  _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM); }
+void frontBackward() { _setChannelDirection(FRONT_IN1, FRONT_IN2, false); _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM); }
+void frontStop()     { _setAxisSpeed(0, &currentFrontSpeed, 0); digitalWrite(FRONT_IN1, LOW); digitalWrite(FRONT_IN2, LOW); }
 void frontSpeed(int speed, bool forward) {
-  _setDriveDirection(forward);
+  _setChannelDirection(FRONT_IN1, FRONT_IN2, forward);
   _setAxisSpeed(0, &currentFrontSpeed, speed);
 }
 
 // ==================== 中轴 ====================
-void middleForward()  { _setDriveDirection(true);  _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM); }
-void middleBackward() { _setDriveDirection(false); _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM); }
-void middleStop()     { _setAxisSpeed(1, &currentMiddleSpeed, 0); }
+void middleForward()  { _setChannelDirection(MIDDLE_IN1, MIDDLE_IN2, true);  _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM); }
+void middleBackward() { _setChannelDirection(MIDDLE_IN1, MIDDLE_IN2, false); _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM); }
+void middleStop()     { _setAxisSpeed(1, &currentMiddleSpeed, 0); digitalWrite(MIDDLE_IN1, LOW); digitalWrite(MIDDLE_IN2, LOW); }
 void middleSpeed(int speed, bool forward) {
-  _setDriveDirection(forward);
+  _setChannelDirection(MIDDLE_IN1, MIDDLE_IN2, forward);
   _setAxisSpeed(1, &currentMiddleSpeed, speed);
 }
 
 // ==================== 后轴 ====================
-void rearForward()  { _setDriveDirection(true);  _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM); }
-void rearBackward() { _setDriveDirection(false); _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM); }
-void rearStop()     { _setAxisSpeed(2, &currentRearSpeed, 0); }
+void rearForward()  { _setChannelDirection(REAR_IN1, REAR_IN2, true);  _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM); }
+void rearBackward() { _setChannelDirection(REAR_IN1, REAR_IN2, false); _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM); }
+void rearStop()     { _setAxisSpeed(2, &currentRearSpeed, 0); digitalWrite(REAR_IN1, LOW); digitalWrite(REAR_IN2, LOW); }
 void rearSpeed(int speed, bool forward) {
-  _setDriveDirection(forward);
+  _setChannelDirection(REAR_IN1, REAR_IN2, forward);
   _setAxisSpeed(2, &currentRearSpeed, speed);
 }
 
@@ -177,20 +186,25 @@ void steerStop() {
 
 // ==================== 全车统一控制 ====================
 void allForward() {
-  _setDriveDirection(true);
+  _setChannelDirection(FRONT_IN1, FRONT_IN2, true);
+  _setChannelDirection(MIDDLE_IN1, MIDDLE_IN2, true);
+  _setChannelDirection(REAR_IN1, REAR_IN2, true);
   _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM);
   _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM);
   _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM);
 }
 void allBackward() {
-  _setDriveDirection(false);
+  _setChannelDirection(FRONT_IN1, FRONT_IN2, false);
+  _setChannelDirection(MIDDLE_IN1, MIDDLE_IN2, false);
+  _setChannelDirection(REAR_IN1, REAR_IN2, false);
   _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM);
   _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM);
   _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM);
 }
 void allStop() {
-  digitalWrite(DRIVE_IN1, LOW);
-  digitalWrite(DRIVE_IN2, LOW);
+  digitalWrite(FRONT_IN1, LOW); digitalWrite(FRONT_IN2, LOW);
+  digitalWrite(MIDDLE_IN1, LOW); digitalWrite(MIDDLE_IN2, LOW);
+  digitalWrite(REAR_IN1, LOW); digitalWrite(REAR_IN2, LOW);
   _pwmWrite(0, 0);
   _pwmWrite(1, 0);
   _pwmWrite(2, 0);
