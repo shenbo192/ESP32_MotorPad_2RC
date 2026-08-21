@@ -11,3 +11,17 @@ bluepad32_lib/
 bp32_v4/
 lib/
 pio_bp32_framework/
+
+# --- local AI/workbuddy memory data (not project source) ---
+.workbuddy/
+
+# --- temporary probe scripts, dumps and logs from PCB automation work ---
+tools/_*
+
+# --- stray temp artifacts at repo root ---
+*_raw.txt
+_rotate_plan.json
+_routed2_raw.txt
+_vias_full_raw.txt
+routed.json
+package-lock.json
