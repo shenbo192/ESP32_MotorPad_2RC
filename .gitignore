@@ -25,3 +25,26 @@ _routed2_raw.txt
 _vias_full_raw.txt
 routed.json
 package-lock.json
+
+# --- temporary debug/exploration scripts generated during PCB bring-up ---
+tools/code_*.js
+tools/*.cjs
+tools/*.mjs
+tools/*.txt
+tools/*.json
+tools/*.err
+tools/probe_*.js
+tools/introspect*.js
+tools/api.js
+tools/easyeda-api-skill/
+
+# but keep the hand-picked core automation artifacts
+!tools/code_router4.js
+!tools/code_strip_and_fly.js
+!tools/code_del_out.js
+!tools/code_move_testpoints.js
+!tools/code_add_silkscreen.js
+!tools/code_silk_rebuild.js
+!tools/routing_dump.json
+!tools/current_dump.json
+!tools/silk_labels.json
