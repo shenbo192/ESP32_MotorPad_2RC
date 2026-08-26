@@ -41,8 +41,8 @@ void steerLeft();
 void steerStop();
 
 // ===== 全车统一控制 =====
-void allForward();
-void allBackward();
+void allForward(int speed);
+void allBackward(int speed);
 void allStop();
 
 // 非阻塞软启动更新（每loop调用一次）

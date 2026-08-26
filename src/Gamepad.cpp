@@ -150,8 +150,8 @@ void processGamepadData() {
       }
     }
   } else {
-    if (goingForward) allForward();
-    else allBackward();
+    if (goingForward) allForward(baseSpeed);
+    else allBackward(baseSpeed);
 
     if (steer > 0) steerRight();
     else if (steer < 0) steerLeft();

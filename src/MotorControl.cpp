@@ -32,7 +32,7 @@ static void _pwmWrite(uint8_t ch, uint32_t value);
 static void _pwmSetup(byte gpio, uint8_t ch);
 static void _setChannelDirection(uint8_t in1, uint8_t in2, bool forward);
 static void _setAxisSpeed(uint8_t ch, int *currentSpeed, int targetSpeed);
-static void _steerStart(int direction);
+static void _steerSet(int direction);
 
 // ===== PWM 输出封装 =====
 static void _pwmWrite(uint8_t ch, uint32_t value) {
@@ -150,56 +150,46 @@ void rearSpeed(int speed, bool forward) {
 }
 
 // ==================== 转向 (L298N D路) ====================
-#define STEER_TIMEOUT_MS  400
+// 弹簧回中式转向：摇杆推着 → 持续通电保持角度（到限位即堵转，靠中等PWM控流）；
+// 松开摇杆 → 断电释放（IN全LOW），由弹簧把轮子拉回中位。
+// 不能断电刹车（IN1=IN2=HIGH），否则弹簧拉不动。
+#define STEER_HOLD_PWM  120   // 保持PWM：堵转电流≈占空比×满堵转电流，L298N 2A/路长期安全
 
-static int steerDirection = 0;
-static unsigned long steerStartTime = 0;
-
-static void _steerStart(int direction) {
-  if (direction != steerDirection) {
-    steerDirection = direction;
-    steerStartTime = millis();
-  }
-  unsigned long elapsed = millis() - steerStartTime;
-
-  if (elapsed < STEER_TIMEOUT_MS) {
-    _pwmWrite(3, MAX_MOTOR_PWM);
-    if (direction > 0)
-      digitalWrite(STEER_IN1, HIGH), digitalWrite(STEER_IN2, LOW);
-    else
-      digitalWrite(STEER_IN1, LOW), digitalWrite(STEER_IN2, HIGH);
+static void _steerSet(int direction) {
+  if (direction > 0) {
+    digitalWrite(STEER_IN1, HIGH); digitalWrite(STEER_IN2, LOW);
+    _pwmWrite(3, STEER_HOLD_PWM);
+  } else if (direction < 0) {
+    digitalWrite(STEER_IN1, LOW); digitalWrite(STEER_IN2, HIGH);
+    _pwmWrite(3, STEER_HOLD_PWM);
   } else {
+    // 断电释放，弹簧回中
     _pwmWrite(3, 0);
-    digitalWrite(STEER_IN1, HIGH), digitalWrite(STEER_IN2, HIGH);
+    digitalWrite(STEER_IN1, LOW);
+    digitalWrite(STEER_IN2, LOW);
   }
 }
 
-void steerRight() { _steerStart(1); }
-void steerLeft()  { _steerStart(-1); }
-
-void steerStop() {
-  steerDirection = 0;
-  _pwmWrite(3, 0);
-  digitalWrite(STEER_IN1, LOW);
-  digitalWrite(STEER_IN2, LOW);
-}
+void steerRight() { _steerSet(1); }
+void steerLeft()  { _steerSet(-1); }
+void steerStop()  { _steerSet(0); }
 
 // ==================== 全车统一控制 ====================
-void allForward() {
+void allForward(int speed) {
   _setChannelDirection(FRONT_IN1, FRONT_IN2, true);
   _setChannelDirection(MIDDLE_IN1, MIDDLE_IN2, true);
   _setChannelDirection(REAR_IN1, REAR_IN2, true);
-  _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM);
-  _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM);
-  _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM);
+  _setAxisSpeed(0, &currentFrontSpeed, speed);
+  _setAxisSpeed(1, &currentMiddleSpeed, speed);
+  _setAxisSpeed(2, &currentRearSpeed, speed);
 }
-void allBackward() {
+void allBackward(int speed) {
   _setChannelDirection(FRONT_IN1, FRONT_IN2, false);
   _setChannelDirection(MIDDLE_IN1, MIDDLE_IN2, false);
   _setChannelDirection(REAR_IN1, REAR_IN2, false);
-  _setAxisSpeed(0, &currentFrontSpeed, MAX_MOTOR_PWM);
-  _setAxisSpeed(1, &currentMiddleSpeed, MAX_MOTOR_PWM);
-  _setAxisSpeed(2, &currentRearSpeed, MAX_MOTOR_PWM);
+  _setAxisSpeed(0, &currentFrontSpeed, speed);
+  _setAxisSpeed(1, &currentMiddleSpeed, speed);
+  _setAxisSpeed(2, &currentRearSpeed, speed);
 }
 void allStop() {
   digitalWrite(FRONT_IN1, LOW); digitalWrite(FRONT_IN2, LOW);
