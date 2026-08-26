@@ -9,21 +9,25 @@ void printPinConfig() {
   Serial.println("╔══════════════════════════════════════════╗");
   Serial.println("║     ESP32 引脚分配表 (6轮攀爬车)        ║");
   Serial.println("╠══════════════════════════════════════════╣");
-  Serial.println("║  ██ 前轴方向 (L298N A路)                ║");
-  Serial.printf("║    IN1 ──── GPIO %-2d  IN2 ──── GPIO %-2d   ║\n", FRONT_IN1, FRONT_IN2);
+  Serial.println("║  ██ 前轴 (L298N A路: IN1/IN2/ENA)       ║");
+  Serial.printf("║    IN1 ── GPIO %-2d   IN2 ── GPIO %-2d     ║\n", FRONT_IN1, FRONT_IN2);
+  Serial.printf("║    ENA ── GPIO %-2d                        ║\n", FRONT_ENA);
   Serial.println("╠══════════════════════════════════════════╣");
-  Serial.println("║  ██ 各轴PWM独立控制                    ║");
-  Serial.printf("║  前轴ENA ── GPIO %-2d                     ║\n", FRONT_ENA);
-  Serial.printf("║  中轴ENB ── GPIO %-2d                     ║\n", MIDDLE_ENA);
-  Serial.printf("║  后轴ENC ── GPIO %-2d                     ║\n", REAR_ENA);
+  Serial.println("║  ██ 中轴 (L298N B路: IN1/IN2/ENA)       ║");
+  Serial.printf("║    IN1 ── GPIO %-2d   IN2 ── GPIO %-2d     ║\n", MIDDLE_IN1, MIDDLE_IN2);
+  Serial.printf("║    ENA ── GPIO %-2d                        ║\n", MIDDLE_ENA);
   Serial.println("╠══════════════════════════════════════════╣");
-  Serial.println("║  ██ 转向 (L298N D路)                   ║");
-  Serial.printf("║    IN1 ──── GPIO %-2d  IN2 ──── GPIO %-2d   ║\n", STEER_IN1, STEER_IN2);
-  Serial.printf("║    ENA ──── GPIO %-2d                     ║\n", STEER_ENA);
+  Serial.println("║  ██ 后轴 (L298N C路: IN1/IN2/ENA)       ║");
+  Serial.printf("║    IN1 ── GPIO %-2d   IN2 ── GPIO %-2d     ║\n", REAR_IN1, REAR_IN2);
+  Serial.printf("║    ENA ── GPIO %-2d                        ║\n", REAR_ENA);
   Serial.println("╠══════════════════════════════════════════╣");
-  Serial.println("║  ██ 其他                                ║");
-  Serial.printf("║  STATUS_LED ── GPIO %-2d                  ║\n", STATUS_LED);
-  Serial.printf("║  LED_STRIP ─── GPIO %-2d                  ║\n", LED_STRIP_PIN);
+  Serial.println("║  ██ 转向 (L298N D路: IN1/IN2/ENA)       ║");
+  Serial.printf("║    IN1 ── GPIO %-2d   IN2 ── GPIO %-2d     ║\n", STEER_IN1, STEER_IN2);
+  Serial.printf("║    ENA ── GPIO %-2d                        ║\n", STEER_ENA);
+  Serial.println("╠══════════════════════════════════════════╣");
+  Serial.println("║  ██ LED系统                              ║");
+  Serial.printf("║  状态灯 ── GPIO %-2d                       ║\n", STATUS_LED);
+  Serial.printf("║  灯带 ──── GPIO %-2d                       ║\n", LED_STRIP_PIN);
   Serial.println("╚══════════════════════════════════════════╝");
   Serial.println();
 }
@@ -49,7 +53,7 @@ void setup() {
   initBTHID();
 
   Serial.println("=== ESP32 6轮攀爬车 初始化完成 ===");
-  Serial.println("布局: 三轴共用方向GPIO12/13 + 独立PWM(14/19/18) + 转向D路");
+  Serial.println("布局: 四路独立IN1/IN2/ENA (前13/12/14 中27/26/25 后15/2/4 转向16/17/5)");
 }
 
 void loop() {
