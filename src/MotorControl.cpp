@@ -4,9 +4,14 @@
 #define SOFT_START_STEP    15
 #define SOFT_START_DELAY   20
 #define MAX_MOTOR_PWM      180
+// 静止起步保底占空比：从 0 起步先给到这个值，足以克服减速箱静摩擦，
+// 避免"低占空比堵转不转、手动推一下才转"。约 100/255≈39%。可调 80~130。
+#define MIN_START_PWM      100
 
 // ===== LEDC PWM 手动配置（绕开 analogWrite 不确定性）=====
-#define PWM_FREQ_HZ        1000
+// 频率原 1000Hz 落人耳可闻区 → 电机线圈开关振动发出"嗯嗯"啸叫；
+// 提到 8000Hz 已超出人耳敏感范围，啸叫基本消失（转向电机同走此频率）。
+#define PWM_FREQ_HZ        8000
 #define PWM_RESOLUTION     8
 
 // ===== 当前各轴实际PWM值 =====
@@ -69,6 +74,12 @@ static void _setAxisSpeed(uint8_t ch, int *currentSpeed, int targetSpeed) {
     _pwmWrite(ch, *currentSpeed);
     ss->active = false; ss->targetSpeed = targetSpeed;
     return;
+  }
+
+  // ★ 启动 boost：从静止/低速起步时先给保底占空比，避免开头力气太小堵转不转
+  if (*currentSpeed < MIN_START_PWM) {
+    *currentSpeed = MIN_START_PWM;
+    _pwmWrite(ch, *currentSpeed);
   }
 
   bool wasInactive = !ss->active;
