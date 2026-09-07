@@ -106,6 +106,10 @@ void updateSoftStarts() {
 }
 
 void initMotorPins() {
+  // TB6612 公共使能：STBY 必须先拉高，否则所有通道都不输出
+  pinMode(MOTOR_STBY, OUTPUT);
+  digitalWrite(MOTOR_STBY, HIGH);
+
   // 前轴
   pinMode(FRONT_IN1, OUTPUT);
   pinMode(FRONT_IN2, OUTPUT);
