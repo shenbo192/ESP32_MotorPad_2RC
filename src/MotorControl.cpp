@@ -168,7 +168,7 @@ void rearSpeed(int speed, bool forward) {
 // 弹簧回中式转向：摇杆推着 → 持续通电保持角度（到限位即堵转，靠中等PWM控流）；
 // 松开摇杆 → 断电释放（IN全LOW），由弹簧把轮子拉回中位。
 // 不能断电刹车（IN1=IN2=HIGH），否则弹簧拉不动。
-#define STEER_HOLD_PWM  120   // 保持PWM：堵转电流≈占空比×满堵转电流，L298N 2A/路长期安全
+#define STEER_HOLD_PWM  180   // 约70%占空比；转向到限位时仍需确认驱动芯片和电机温升
 
 static void _steerSet(int direction) {
   if (direction > 0) {

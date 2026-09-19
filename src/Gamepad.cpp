@@ -40,8 +40,8 @@ void processGamepadData() {
   
   bool lb    = (gamepad.buttons2 & 0x10);  // LB键
   bool rb    = (gamepad.buttons2 & 0x20);  // RB键（手刹）
-  bool btnA  = (gamepad.buttons1 & 0x01);  // A键
-  bool btnB  = (gamepad.buttons1 & 0x02);  // B键
+  bool btnA  = (gamepad.buttons2 & 0x01);  // A键
+  bool btnB  = (gamepad.buttons2 & 0x02);  // B键
 
   // ★ 速度档位切换（A=高速，B=低速）
   if (btnA && !lastA) {
@@ -98,6 +98,10 @@ void processGamepadData() {
 
   if (!hasThrottle) {
     allStop();
+    // allStop() 只停止三轴驱动，转向由弹簧回中逻辑单独处理。
+    if (steer > 0) steerRight();
+    else if (steer < 0) steerLeft();
+    else steerStop();
     if (lastCmd != 0 || lastSteer != 0) {
       lastCmd = 0; lastSteer = 0; lastSpd = 0;
     }

@@ -17,8 +17,9 @@
 #include <nvs_flash.h>
 
 // ============ 配置参数 ============
-#define RECONNECT_TIMEOUT_MS   500     // 断连后多久自动重扫 (毫秒) - 改为500ms更快重连
-#define SCAN_DURATION_MS       5000    // 每次扫描持续时长 (毫秒) - 增加为5秒以提高发现率
+#define RECONNECT_TIMEOUT_MS   5000    // 断连后等待多久开始重新尝试
+#define SCAN_DURATION_MS       10000   // 一次扫描窗口
+#define SCAN_RETRY_INTERVAL_MS 15000   // 扫描窗口之间的间隔
 
 // ============ 全局变量 ============
 static ControllerPtr myGamepads[BP32_MAX_GAMEPADS];
@@ -103,16 +104,13 @@ static const char* getModelName(int model) {
 // ============ 扫描控制 ============
 
 // 开始新的蓝牙扫描
-static void startScan(bool forgetKeys = false) {
+static void startScan() {
     if (isScanning) return;  // 避免重复扫描
 
     isScanning = true;
     lastScanTime = millis();
-    // 只有在明确要求的情况下才清除旧绑定（例如手动重扫），
-    // 自动重连不应清除绑定信息，否则会强制手柄进入配对模式。
-    if (forgetKeys) {
-        BP32.forgetBluetoothKeys();  // 清除旧绑定，开始新扫描
-    }
+    // 保留历史绑定，同时开启发现模式，允许已配对和新手柄连接。
+    BP32.enableNewBluetoothConnections(true);
 
     Serial.print("\n>>> 🔍 开始蓝牙扫描... ");
     Serial.printf("[超时: %dms] <<<\n", SCAN_DURATION_MS);
@@ -221,6 +219,7 @@ void initBTHID()
     // 配置并初始化Bluepad32
     Serial.print("[3/3] 初始化Bluepad32... ");
     BP32.setup(&onConnectedController, &onDisconnectedController);
+    BP32.enableNewBluetoothConnections(true);
 
     // 清空Controller数组
     for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
@@ -228,6 +227,7 @@ void initBTHID()
     }
 
     bp32Ready = true;
+    startScan();
 
     Serial.println("OK ✓\n");
     
@@ -265,8 +265,9 @@ void initBTHID()
 // ============ 手动触发重新扫描（公开接口）============
 void resumeBTHIDScan() {
     Serial.println("\n🔄 [手动] 用户请求重新搜索蓝牙手柄...");
-    // 手动触发时清除绑定并强制重新配对
-    startScan(true);
+    // 不清除绑定，已配对和新手柄都允许连接。
+    BP32.enableNewBluetoothConnections(true);
+    startScan();
     disconnectTime = 0;  // 重置断连计时器
 }
 
@@ -281,14 +282,14 @@ void processBTHID()
     // ========== 自动重联逻辑 ==========
     if (!deviceConnected && autoReconnectEnabled) {
         
-        // 检查是否到达重扫超时
-        if (disconnectTime > 0 && (millis() - disconnectTime >= RECONNECT_TIMEOUT_MS)) {
-            // 只在未扫描状态下才触发新扫描
-            if (!isScanning) {
-                Serial.printf("\n⏱ [%lu ms无连接] 触动自动重扫...\n", millis() - disconnectTime);
-                startScan();
-                disconnectTime = 0;  // 重置，避免重复触发
-            }
+        // 断开后延迟重试；之后按固定间隔重复尝试，避免扫描过密。
+        unsigned long now = millis();
+        bool reconnectDue = disconnectTime > 0 && (now - disconnectTime >= RECONNECT_TIMEOUT_MS);
+        bool retryDue = lastScanTime > 0 && (now - lastScanTime >= SCAN_RETRY_INTERVAL_MS);
+        if (!isScanning && (reconnectDue || retryDue)) {
+            Serial.printf("\n⏱ [%lu ms无连接] 重新尝试扫描...\n", disconnectTime ? now - disconnectTime : now - lastScanTime);
+            startScan();
+            disconnectTime = 0;
         }
         
         // 检查当前扫描是否超时
@@ -328,13 +329,13 @@ void processBTHID()
             if (btns & BUTTON_TRIGGER_L)  gamepad.buttons2 |= 0x40;  // L2 / LT
             if (btns & BUTTON_TRIGGER_R)  gamepad.buttons2 |= 0x80;  // R2 / RT
 
-            // 左摇杆 (-32768 ~ 32767 → 0 ~ 255, 128为中心)
-            gamepad.leftX  = map(gp->axisX(),  -32768, 32767, 0, 255);
-            gamepad.leftY  = map(gp->axisY(),  -32768, 32767, 0, 255);
+            // Bluepad32 摇杆轴范围约为 -512 ~ 512，转换为 0 ~ 255。
+            gamepad.leftX  = map(constrain(gp->axisX(),  -512, 512), -512, 512, 0, 255);
+            gamepad.leftY  = map(constrain(gp->axisY(),  -512, 512), -512, 512, 0, 255);
             
             // 右摇杆
-            gamepad.rightX = map(gp->axisRX(), -32768, 32767, 0, 255);
-            gamepad.rightY = map(gp->axisRY(), -32768, 32767, 0, 255);
+            gamepad.rightX = map(constrain(gp->axisRX(), -512, 512), -512, 512, 0, 255);
+            gamepad.rightY = map(constrain(gp->axisRY(), -512, 512), -512, 512, 0, 255);
 
             // 扳机 brake/throttle (0~1023 → 0~255)
             gamepad.leftTrigger  = map(gp->brake(),    0, 1023, 0, 255);
@@ -378,10 +379,10 @@ void processBTHID()
             if(btns & BUTTON_TRIGGER_R)  cur.buttons2 |= 0x80;
             
             // 摇杆
-            cur.leftX  = map(gp->axisX(),  -32768,32767,0,255);
-            cur.leftY  = map(gp->axisY(),  -32768,32767,0,255);
-            cur.rightX = map(gp->axisRX(), -32768,32767,0,255);
-            cur.rightY = map(gp->axisRY(), -32768,32767,0,255);
+            cur.leftX  = map(constrain(gp->axisX(),  -512, 512), -512, 512, 0, 255);
+            cur.leftY  = map(constrain(gp->axisY(),  -512, 512), -512, 512, 0, 255);
+            cur.rightX = map(constrain(gp->axisRX(), -512, 512), -512, 512, 0, 255);
+            cur.rightY = map(constrain(gp->axisRY(), -512, 512), -512, 512, 0, 255);
             
             // 扳机
             cur.leftTrigger  = map(gp->brake(),   0,1023,0,255);
